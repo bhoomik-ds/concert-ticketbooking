@@ -23,11 +23,12 @@ const TicketPage = () => {
     date: "",
     bannerImage: "" 
   });
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const API_URL = "https://concert-api-77il.onrender.com";
 
   // 1. Fetch Data from Backend
   useEffect(() => {
-    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    const API_URL = "https://concert-api-77il.onrender.com";
+
     const fetchTickets = async () => {
       try {
         const response = await axios.get(`${API_URL}/api/events`);

@@ -13,7 +13,7 @@ const EventInfo = () => {
   useEffect(() => {
     const fetchEventInfo = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/events");
+        const response = await axios.get("https://concert-api-77il.onrender.com/api/events");
         // Assuming we are showing the first event
         setEventData(response.data[0]); 
         setLoading(false);

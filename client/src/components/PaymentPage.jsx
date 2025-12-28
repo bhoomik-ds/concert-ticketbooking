@@ -12,12 +12,11 @@ const PaymentPage = () => {
   // New States for Discount
   const [couponCode, setCouponCode] = useState("");
   const [discountData, setDiscountData] = useState(null);
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const API_URL = "https://concert-api-77il.onrender.com";
 
   useEffect(() => {
     // Define API URL
-    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
+    const API_URL = "https://concert-api-77il.onrender.com";
     axios.get(`${API_URL}/api/ticketbooking/${id}`)
       .then(res => {
         setBooking(res.data);
@@ -36,7 +35,7 @@ const PaymentPage = () => {
   const handleApplyCoupon = async () => {
     if (!couponCode) return alert("Please enter a code");
     try {
-          const res = await axios.post("http://localhost:5000/api/apply-discount", {
+          const res = await axios.post("https://concert-api-77il.onrender.com/api/apply-discount", {
             bookingId: id,
         code: couponCode
       });

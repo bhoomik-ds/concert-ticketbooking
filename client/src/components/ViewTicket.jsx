@@ -8,7 +8,7 @@ const ViewTicket = () => {
   const [booking, setBooking] = useState(null);
 
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/ticketbooking/${id}`)
+    axios.get(`https://concert-api-77il.onrender.com/api/ticketbooking/${id}`)
       .then(res => setBooking(res.data))
       .catch(err => console.error(err));
   }, [id]);

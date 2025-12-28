@@ -11,7 +11,7 @@ const MyTickets = () => {
 
   useEffect(() => {
     // Define API URL
-    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+    const API_URL = "https://concert-api-77il.onrender.com";
 
     if (isSignedIn && user) {
       const fetchBookings = async () => {
