@@ -207,14 +207,24 @@ app.post('/api/apply-discount', async (req, res) => {
   }
 });
 
+
+// 1. DEFINE PORT (Must be above app.listen)
 // ==========================
-//   DB CONNECTION & START
+const PORT = process.env.PORT || 5000;
+
+// ==========================
+// 2. CORS SETUP (Updated for easy deployment)
 // ==========================
 app.use(cors({
-  origin: ["http://localhost:5173", "https://your-frontend-domain.vercel.app"], // We will add the real domain later
+  // allowing '*' means "Allow Everyone" (Easiest for testing)
+  // Once your Vercel app is working, you can replace '*' with your specific URL.
+  origin: "*", 
   credentials: true
 }));
 
+// ==========================
+// 3. DB CONNECTION & START
+// ==========================
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB Connected Successfully');
