@@ -40,7 +40,7 @@ const PaymentPage = () => {
   const handleApplyCoupon = async () => {
     if (!couponCode) return alert("Please enter a code");
     try {
-      const res = await axios.post("http://localhost:5000/api/apply-discount", {
+      const res = await axios.post("https://concert-api-77il.onrender.com/api/apply-discount", {
         bookingId: id,
         code: couponCode
       });
@@ -78,7 +78,7 @@ const PaymentPage = () => {
 
     try {
       setLoading(true);
-      const { data } = await axios.post("http://localhost:5000/api/payment/create-order", { 
+      const { data } = await axios.post("https://concert-api-77il.onrender.com/payment/create-order", { 
           eventId: id,
           amount: finalAmount,
           seats: bookingDetails.selectedSeats, // ✅ Use details from state
@@ -96,7 +96,7 @@ const PaymentPage = () => {
         order_id: data.order_id,
         handler: async function (response) {
           try {
-            const verifyRes = await axios.post("http://localhost:5000/api/payment/verify", {
+            const verifyRes = await axios.post("https://concert-api-77il.onrender.com/api/payment/verify", {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_signature: response.razorpay_signature,

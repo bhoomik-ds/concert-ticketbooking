@@ -28,7 +28,7 @@ const TicketPage = () => {
   useEffect(() => {
     const fetchTickets = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/events");
+        const response = await axios.get("https://concert-api-77il.onrender.com/api/events");
         const eventData = response.data[0]; // Assuming fetching the first event
 
         if (eventData) {
