@@ -24,16 +24,17 @@ const TicketPage = () => {
     bannerImage: ""
   });
 
-  // 1. Fetch Data from Backend
+  // 1. Fetch Data from Backend (FIXED: Using Render URL)
   useEffect(() => {
     const fetchTickets = async () => {
       try {
+        // 👇👇👇 THIS WAS THE ERROR. NOW FIXED TO RENDER URL 👇👇👇
         const response = await axios.get("https://concert-api-77il.onrender.com/api/events");
-        const eventData = response.data[0]; // Assuming fetching the first event
+        const eventData = response.data[0]; 
 
         if (eventData) {
           setEventDetails({
-            id: eventData._id, // ✅ Saved ID for navigation
+            id: eventData._id, 
             title: eventData.title,
             venue: `${eventData.venue.name}, ${eventData.venue.city}`,
             date: new Date(eventData.date).toDateString(),
@@ -60,18 +61,12 @@ const TicketPage = () => {
     fetchTickets();
   }, []);
 
-  // 2. Handle Add Ticket
   const handleAdd = (id) => {
     const totalCount = Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0);
     if (totalCount >= 10) return;
-
-    setSelectedTickets((prev) => ({
-      ...prev,
-      [id]: (prev[id] || 0) + 1,
-    }));
+    setSelectedTickets((prev) => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
   };
 
-  // 3. Handle Remove Ticket
   const handleRemove = (id) => {
     setSelectedTickets((prev) => {
       if (!prev[id]) return prev;
@@ -85,38 +80,35 @@ const TicketPage = () => {
     });
   };
 
-  // 4. Calculate Totals
   const totalTickets = Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0);
-
   const totalPrice = Object.entries(selectedTickets).reduce((sum, [id, qty]) => {
     const ticket = tickets.find((t) => t.id === id);
     if (!ticket) return sum;
     return sum + (ticket.rawPrice * qty);
   }, 0);
 
-  // 5. Handle Proceed (UPDATED)
+  // 5. Handle Proceed (FIXED: Save to LocalStorage)
   const handleProceed = () => {
     if (totalTickets === 0) {
       alert("Please select at least one ticket.");
       return;
     }
 
-    // Convert the 'selectedTickets' object (e.g., { '123': 2 }) 
-    // into a readable array for the Payment Page (e.g., ["Gold (x2)"])
     const seatSummary = Object.entries(selectedTickets).map(([id, qty]) => {
         const ticket = tickets.find(t => t.id === id);
         return `${ticket.name} (x${qty})`; 
     });
 
-    // ✅ NAVIGATE TO PAYMENT PAGE WITH DATA
-    // We do NOT create the booking in DB yet. We wait for login on the next page.
-    navigate(`/payment/${eventDetails.id}`, {
-      state: {
-        selectedSeats: seatSummary, // Matches PaymentPage variable
+    // ✅ SAVE DATA TO LOCAL STORAGE (Safety Backup)
+    const bookingData = {
+        selectedSeats: seatSummary, 
         totalAmount: totalPrice,
         eventDetails: eventDetails
-      }
-    });
+    };
+    localStorage.setItem("pendingBooking", JSON.stringify(bookingData));
+
+    // Navigate to payment
+    navigate(`/payment/${eventDetails.id}`, { state: bookingData });
   };
 
   if (loading) return <div className="p-10 text-center">Loading Event Details...</div>;
@@ -124,21 +116,10 @@ const TicketPage = () => {
   return (
     <Layout>
       <Banner image={eventDetails.bannerImage} title={eventDetails.title} />
-
       <StepIndicator step={1} />
-
-      <EventHeader
-        title={eventDetails.title}
-        venue={eventDetails.venue}
-        datetime={eventDetails.date}
-      />
-
-      <TicketList
-        tickets={tickets}
-        selectedTickets={selectedTickets}
-        onAdd={handleAdd}
-        onRemove={handleRemove}
-      />
+      <EventHeader title={eventDetails.title} venue={eventDetails.venue} datetime={eventDetails.date} />
+      
+      <TicketList tickets={tickets} selectedTickets={selectedTickets} onAdd={handleAdd} onRemove={handleRemove} />
 
       <div className="mt-6 text-center space-y-2 pb-10">
         <p className="text-lg font-semibold text-gray-700">
@@ -149,9 +130,7 @@ const TicketPage = () => {
           onClick={handleProceed}
           disabled={totalTickets === 0}
           className={`w-full sm:w-auto px-8 py-3 rounded-lg font-bold transition ${
-            totalTickets > 0
-              ? "bg-green-600 text-white hover:bg-green-700 shadow-md"
-              : "bg-gray-400 text-white cursor-not-allowed"
+            totalTickets > 0 ? "bg-green-600 text-white hover:bg-green-700 shadow-md" : "bg-gray-400 text-white cursor-not-allowed"
           }`}
         >
           Proceed to Pay
