@@ -17,7 +17,7 @@ const PaymentPage = () => {
   const [discountData, setDiscountData] = useState(null);
   const [bookingDetails, setBookingDetails] = useState(null);
 
-  // User Details Form State
+  // ✅ User Details Form State
   const [userDetails, setUserDetails] = useState({
     fullName: "",
     mobile: "",
@@ -25,7 +25,7 @@ const PaymentPage = () => {
   });
   const [isDetailsSaved, setIsDetailsSaved] = useState(false); 
 
-  // 1. Load Booking Data
+  // 1. Load Booking Data (Robust Version)
   useEffect(() => {
     const savedData = localStorage.getItem("pendingBooking");
     if (state) {
@@ -45,7 +45,7 @@ const PaymentPage = () => {
     }
   }, [user]);
 
-  // ✅ 3. DEFINE THE MISSING FUNCTION HERE
+  // ✅ Handle Apply Coupon (Was missing before)
   const handleApplyCoupon = async () => {
     if (!couponCode) return alert("Please enter a code");
     try {
@@ -71,6 +71,7 @@ const PaymentPage = () => {
 
     try {
       setLoading(true);
+      // Update User Profile
       await axios.post("https://concert-api-77il.onrender.com/api/user/update", {
         clerkId: user.id,
         fullName: userDetails.fullName,
@@ -94,6 +95,7 @@ const PaymentPage = () => {
         return;
     }
     
+    // 🔒 Block Payment if details are not saved
     if (!isDetailsSaved) {
         return alert("Please Confirm your Details first!");
     }
@@ -130,6 +132,7 @@ const PaymentPage = () => {
 
     try {
       setLoading(true);
+      // Create Order
       const { data } = await axios.post("https://concert-api-77il.onrender.com/api/payment/create-order", { 
           eventId: id,
           amount: finalAmount,
@@ -148,6 +151,7 @@ const PaymentPage = () => {
         order_id: data.order_id,
         handler: async function (response) {
           try {
+            // ✅ SEND GUEST DETAILS IN VERIFY STEP
             const verifyRes = await axios.post("https://concert-api-77il.onrender.com/api/payment/verify", {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
@@ -156,7 +160,12 @@ const PaymentPage = () => {
                   eventId: id,
                   userId: user.id,
                   seats: parsedSeats,
-                  totalAmount: finalAmount
+                  totalAmount: finalAmount,
+                  
+                  // 👇 IMPORTANT: Send these to save in TicketBooking collection
+                  guestName: userDetails.fullName,
+                  mobile: userDetails.mobile,
+                  city: userDetails.city
               }
             });
             if (verifyRes.data.success) {
@@ -184,7 +193,15 @@ const PaymentPage = () => {
   };
 
   if (!isLoaded) return <div className="p-10 text-center">Loading...</div>;
-  if (!bookingDetails) return <div className="p-10 text-center">No Booking Found</div>;
+  
+  if (!bookingDetails) {
+      return (
+        <div className="p-10 text-center flex flex-col items-center">
+            <h2 className="text-xl font-bold text-red-500 mb-4">No Booking Found</h2>
+            <button onClick={() => navigate('/')} className="bg-blue-600 text-white px-6 py-2 rounded font-bold">Go Back Home</button>
+        </div>
+      );
+  }
 
   const { selectedSeats, totalAmount, eventDetails } = bookingDetails;
   const currentTotal = discountData ? discountData.finalAmount : totalAmount;

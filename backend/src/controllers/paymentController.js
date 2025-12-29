@@ -1,8 +1,8 @@
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
-const Booking = require('../models/Booking'); // Ensure you have this model
+// ✅ Import the correct model
+const TicketBooking = require('../models/TicketBooking'); 
 
-// Initialize Razorpay
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -11,10 +11,10 @@ const razorpay = new Razorpay({
 // 1. Create Order
 exports.createOrder = async (req, res) => {
   try {
-    const { amount, seats, eventId, userId } = req.body;
+    const { amount } = req.body; // Only amount is needed for Razorpay Order
 
     const options = {
-      amount: amount * 100, // Razorpay takes amount in paisa (100 INR = 10000 paisa)
+      amount: Math.round(amount * 100), // Convert to paisa
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
     };
@@ -35,12 +35,11 @@ exports.createOrder = async (req, res) => {
   }
 };
 
-// 2. Verify Payment
+// 2. Verify Payment & SAVE BOOKING
 exports.verifyPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingData } = req.body;
 
-    // Create signature to verify
     const sign = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSign = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
@@ -48,14 +47,32 @@ exports.verifyPayment = async (req, res) => {
       .digest("hex");
 
     if (razorpay_signature === expectedSign) {
-      // ✅ Payment Verified! Now Save Booking to DB
-      const newBooking = new Booking({
+      // ✅ Payment Verified! Now Save to DB
+      
+      const newBooking = new TicketBooking({
         userId: bookingData.userId,
         eventId: bookingData.eventId,
-        tickets: bookingData.seats.map(s => ({ ticketType: s, quantity: 1 })), // Adjust based on your Schema
+        
+        // ✅ SAVE GUEST DETAILS
+        guestName: bookingData.guestName,
+        mobile: bookingData.mobile,
+        city: bookingData.city,
+
+        // Map seats to schema format
+        tickets: bookingData.seats.map(s => ({
+            ticketType: s.ticketType,
+            quantity: s.quantity
+        })),
+        
+        totalTickets: bookingData.seats.reduce((sum, s) => sum + s.quantity, 0),
         totalAmount: bookingData.totalAmount,
-        paymentId: razorpay_payment_id,
-        status: "Confirmed"
+        finalAmount: bookingData.totalAmount, // Assuming full paid
+        
+        paymentStatus: 'paid',
+        razorpayPaymentId: razorpay_payment_id,
+        razorpayOrderId: razorpay_order_id,
+        razorpaySignature: razorpay_signature,
+        paidAt: new Date()
       });
 
       await newBooking.save();
