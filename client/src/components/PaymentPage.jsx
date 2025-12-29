@@ -7,7 +7,7 @@ import { useUser, useClerk } from "@clerk/clerk-react";
 const PaymentPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { state } = useLocation(); // Data from previous page
+  const { state } = useLocation(); // Data from TicketPage
   
   // Clerk Hooks
   const { isSignedIn, user, isLoaded } = useUser();
@@ -17,17 +17,17 @@ const PaymentPage = () => {
   const [couponCode, setCouponCode] = useState("");
   const [discountData, setDiscountData] = useState(null);
   
-  // ✅ NEW: State to hold booking details (from URL or LocalStorage)
+  // ✅ STATE: Holds booking details (from URL or restored from Backup)
   const [bookingDetails, setBookingDetails] = useState(null);
 
-  // ✅ 1. Load Data Logic (The Fix)
+  // ✅ 1. THE FIX: Save Data to LocalStorage (Backup)
   useEffect(() => {
-    // A. If we have data coming from the previous page, use it AND save backup
+    // Case A: User came from "Book Tickets" page (We have data) -> Save Backup
     if (state) {
       setBookingDetails(state);
       localStorage.setItem("tempBooking", JSON.stringify(state));
     } 
-    // B. If no data (user just logged in and page reloaded), try loading backup
+    // Case B: User just Logged In (State is lost) -> Load Backup
     else {
       const savedData = localStorage.getItem("tempBooking");
       if (savedData) {
@@ -62,10 +62,10 @@ const PaymentPage = () => {
   };
 
   const handlePayment = async () => {
+    // 🔒 SECURITY CHECK: Force Login if not signed in
     if (!isSignedIn) {
-        // ✅ Force Clerk to redirect BACK to this page after login
         openSignIn({
-            redirectUrl: window.location.href 
+            redirectUrl: window.location.href // ✅ Force Clerk to come BACK here
         });
         return;
     }
@@ -73,15 +73,16 @@ const PaymentPage = () => {
     const res = await loadRazorpayScript();
     if (!res) return alert("Razorpay SDK failed to load.");
 
-    // Use current data values
+    // Use the reliable data source
     const finalAmount = discountData ? discountData.finalAmount : bookingDetails.totalAmount;
+    const seatsToBook = bookingDetails.selectedSeats;
 
     try {
       setLoading(true);
-      const { data } = await axios.post("https://concert-api-77il.onrender.com/payment/create-order", { 
+      const { data } = await axios.post("https://concert-api-77il.onrender.com/api/payment/create-order", { 
           eventId: id,
           amount: finalAmount,
-          seats: bookingDetails.selectedSeats, // ✅ Use details from state
+          seats: seatsToBook, 
           userId: user.id 
       });
       
@@ -103,12 +104,12 @@ const PaymentPage = () => {
               bookingData: { 
                   eventId: id,
                   userId: user.id,
-                  seats: bookingDetails.selectedSeats,
+                  seats: seatsToBook,
                   totalAmount: finalAmount
               }
             });
             if (verifyRes.data.success) {
-                // ✅ Cleanup: Clear local storage after success
+                // ✅ CLEANUP: Remove backup after success
                 localStorage.removeItem("tempBooking");
                 navigate(`/view-ticket/${verifyRes.data.bookingId}`);
             }
@@ -134,21 +135,29 @@ const PaymentPage = () => {
 
   // --- RENDER LOGIC ---
 
-  // 1. Wait for auth to load
   if (!isLoaded) return <div className="p-10 text-center">Loading user data...</div>;
 
-  // 2. If no data found even after trying to restore backup
+  // Show nice error if data is truly missing
   if (!bookingDetails) {
-      return <div className="p-10 text-center text-red-500">No booking details found. Please select tickets first.</div>;
+      return (
+        <div className="p-10 text-center flex flex-col items-center">
+            <h2 className="text-xl font-bold text-red-500 mb-4">No Booking Found</h2>
+            <button 
+                onClick={() => navigate('/')}
+                className="bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700"
+            >
+                Go Back Home
+            </button>
+        </div>
+      );
   }
 
-  // 3. Extract values for render
   const { selectedSeats, totalAmount, eventDetails } = bookingDetails;
   const currentTotal = discountData ? discountData.finalAmount : totalAmount;
   const discount = discountData ? discountData.discountAmount : 0;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-gray-50 min-h-screen flex gap-6">
+    <div className="max-w-4xl mx-auto p-6 bg-gray-50 min-h-screen flex flex-col md:flex-row gap-6">
       
       {/* LEFT: Ticket Summary */}
       <div className="flex-1 bg-white p-6 rounded-lg shadow-md h-fit">
@@ -158,7 +167,10 @@ const PaymentPage = () => {
         <div className="mt-4 border-t pt-4">
             <div className="flex justify-between my-2">
                 <span>Seats</span>
-                <span className="font-medium">{Array.isArray(selectedSeats) ? selectedSeats.join(", ") : selectedSeats}</span>
+                <span className="font-medium">
+                  {/* Handle both Array or String formats safely */}
+                  {Array.isArray(selectedSeats) ? selectedSeats.join(", ") : selectedSeats}
+                </span>
             </div>
             <div className="flex justify-between my-2">
                 <span>Quantity</span>
@@ -190,7 +202,7 @@ const PaymentPage = () => {
       </div>
 
       {/* RIGHT: Auth & Payment Action */}
-      <div className="w-80 bg-white p-6 rounded-lg shadow-md h-fit">
+      <div className="w-full md:w-80 bg-white p-6 rounded-lg shadow-md h-fit">
         {isSignedIn ? (
             // ✅ LOGGED IN STATE
             <div>
@@ -212,8 +224,9 @@ const PaymentPage = () => {
                     To complete your purchase and receive the ticket via email, please login.
                 </p>
                 <button 
+                  // ✅ IMPORTANT: Force Redirect BACK to this exact page
                   onClick={() => openSignIn({
-                    redirectUrl: window.location.href // Force return to this page
+                    redirectUrl: window.location.href 
                   })}
                   className="w-full border-2 border-pink-600 text-pink-600 py-3 rounded-lg font-bold hover:bg-pink-50 transition"
                 >
@@ -222,7 +235,6 @@ const PaymentPage = () => {
             </div>
         )}
       </div>
-
     </div>
   );
 };
