@@ -15,6 +15,13 @@ const GiftCard = require('./src/models/GiftCard');
 const app = express();
 app.use(cors());
 app.use(express.json());
+// 1. Import the route (at the top)
+const paymentRoutes = require('./src/routes/paymentRoutes');
+
+// ... (other app.use lines)
+
+// 2. Use the route (before app.listen)
+app.use('/api/payment', paymentRoutes);
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,

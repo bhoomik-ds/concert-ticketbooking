@@ -1,5 +1,12 @@
 const express = require('express');
 const cors = require('cors');
+// 1. Import the route (at the top)
+const paymentRoutes = require('./src/routes/paymentRoutes');
+
+// ... (other app.use lines)
+
+// 2. Use the route (before app.listen)
+app.use('/api/payment', paymentRoutes);
 
 // Import your route files
 const eventRoutes = require('./routes/eventRoutes');
