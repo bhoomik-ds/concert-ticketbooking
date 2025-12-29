@@ -1,53 +1,51 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { useUser } from "@clerk/clerk-react";
 import Layout from "./Layout";
 import StepIndicator from "./StepIndicator";
 import EventHeader from "./EventHeader";
 import TicketList from "./TicketList";
 import Button from "./Button";
-import Banner from "./Banner"; 
+import Banner from "./Banner";
 
 const TicketPage = () => {
   const navigate = useNavigate();
-  const { user, isSignedIn } = useUser();
 
   const [tickets, setTickets] = useState([]);
   const [selectedTickets, setSelectedTickets] = useState({});
   const [loading, setLoading] = useState(true);
-  
+
+  // Store Event ID so we can put it in the URL
   const [eventDetails, setEventDetails] = useState({
+    id: "",
     title: "Loading Event...",
     venue: "",
     date: "",
-    bannerImage: "" 
+    bannerImage: ""
   });
-  const API_URL = "https://concert-api-77il.onrender.com";
 
   // 1. Fetch Data from Backend
   useEffect(() => {
-    const API_URL = "https://concert-api-77il.onrender.com";
-
     const fetchTickets = async () => {
       try {
-        const response = await axios.get(`${API_URL}/api/events`);
-        const eventData = response.data[0];
+        const response = await axios.get("http://localhost:5000/api/events");
+        const eventData = response.data[0]; // Assuming fetching the first event
 
         if (eventData) {
           setEventDetails({
+            id: eventData._id, // ✅ Saved ID for navigation
             title: eventData.title,
             venue: `${eventData.venue.name}, ${eventData.venue.city}`,
             date: new Date(eventData.date).toDateString(),
-            bannerImage: eventData.bannerImage 
+            bannerImage: eventData.bannerImage
           });
 
           if (eventData.ticketTypes) {
             const formattedTickets = eventData.ticketTypes.map((t) => ({
-              id: t._id,              
+              id: t._id,
               name: t.name,
-              price: `₹${t.price}`,   
-              rawPrice: t.price       
+              price: `₹${t.price}`,
+              rawPrice: t.price
             }));
             setTickets(formattedTickets);
           }
@@ -65,7 +63,7 @@ const TicketPage = () => {
   // 2. Handle Add Ticket
   const handleAdd = (id) => {
     const totalCount = Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0);
-    if (totalCount >= 10) return; 
+    if (totalCount >= 10) return;
 
     setSelectedTickets((prev) => ({
       ...prev,
@@ -96,47 +94,29 @@ const TicketPage = () => {
     return sum + (ticket.rawPrice * qty);
   }, 0);
 
-  // 5. Handle Proceed
-  const handleProceed = async () => {
-    console.log("Button Clicked!"); // Debugging Log
-
-    if (!isSignedIn) {
-      alert("Please Sign In to book tickets!");
-      return;
-    }
-
+  // 5. Handle Proceed (UPDATED)
+  const handleProceed = () => {
     if (totalTickets === 0) {
       alert("Please select at least one ticket.");
       return;
     }
 
-    const bookingPayload = {
-      userId: user.id,
-      userEmail: user.primaryEmailAddress?.emailAddress,
-      totalTickets,
-      totalAmount: totalPrice,
-      tickets: Object.entries(selectedTickets).map(([id, qty]) => {
-        const ticketInfo = tickets.find((t) => t.id === id);
-        return {
-          ticketType: ticketInfo.name,
-          price: ticketInfo.rawPrice,
-          quantity: qty,
-          subtotal: ticketInfo.rawPrice * qty
-        };
-      })
-    };
+    // Convert the 'selectedTickets' object (e.g., { '123': 2 }) 
+    // into a readable array for the Payment Page (e.g., ["Gold (x2)"])
+    const seatSummary = Object.entries(selectedTickets).map(([id, qty]) => {
+        const ticket = tickets.find(t => t.id === id);
+        return `${ticket.name} (x${qty})`; 
+    });
 
-    try {
-      console.log("Sending Request to Backend...");
-      // This 'await' works now because 'async' is added above
-      const response = await axios.post(`${API_URL}/api/ticketbooking`, bookingPayload);
-
-      console.log("Booking Success:", response.data);
-      navigate(`/payment/${response.data._id}`);
-    } catch (error) {
-      console.error("Booking failed:", error);
-      alert("Something went wrong with the booking. Please try again.");
-    }
+    // ✅ NAVIGATE TO PAYMENT PAGE WITH DATA
+    // We do NOT create the booking in DB yet. We wait for login on the next page.
+    navigate(`/payment/${eventDetails.id}`, {
+      state: {
+        selectedSeats: seatSummary, // Matches PaymentPage variable
+        totalAmount: totalPrice,
+        eventDetails: eventDetails
+      }
+    });
   };
 
   if (loading) return <div className="p-10 text-center">Loading Event Details...</div>;
@@ -145,8 +125,8 @@ const TicketPage = () => {
     <Layout>
       <Banner image={eventDetails.bannerImage} title={eventDetails.title} />
 
-      <StepIndicator />
-      
+      <StepIndicator step={1} />
+
       <EventHeader
         title={eventDetails.title}
         venue={eventDetails.venue}

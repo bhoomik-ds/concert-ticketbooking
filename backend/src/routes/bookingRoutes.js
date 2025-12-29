@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bookingController = require('../controllers/bookingController');
 
-router.post('/', bookingController.createBooking);   // POST /api/bookings
+// This route receives the POST request when payment is initiated
+router.post('/', bookingController.createBooking); 
 
 module.exports = router;
