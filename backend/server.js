@@ -15,6 +15,20 @@ const GiftCard = require('./src/models/GiftCard');
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// ... existing imports ...
+const userController = require('./src/controllers/userController'); // ✅ Import Controller
+
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+// ... existing routes ...
+
+// ✅ ADD THIS NEW ROUTE for updating user details
+app.post('/api/user/update', userController.updateUserProfile);
+
+// ... existing app.listen ...
 // 1. Import the route (at the top)
 const paymentRoutes = require('./src/routes/paymentRoutes');
 
