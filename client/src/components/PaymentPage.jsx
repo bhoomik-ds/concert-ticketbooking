@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { Tag, User, Phone, MapPin } from 'lucide-react'; 
+import { Tag, User, Phone, MapPin, ScrollText } from 'lucide-react'; 
 import { useUser, useClerk } from "@clerk/clerk-react";
 
 const PaymentPage = () => {
@@ -24,6 +24,9 @@ const PaymentPage = () => {
     city: ""
   });
   const [isDetailsSaved, setIsDetailsSaved] = useState(false); 
+  
+  // ✅ NEW: Terms and Conditions State
+  const [isTermsAccepted, setIsTermsAccepted] = useState(false);
 
   // 1. Load Booking Data (Robust Version)
   useEffect(() => {
@@ -45,7 +48,7 @@ const PaymentPage = () => {
     }
   }, [user]);
 
-  // ✅ Handle Apply Coupon (Was missing before)
+  // ✅ Handle Apply Coupon
   const handleApplyCoupon = async () => {
     if (!couponCode) return alert("Please enter a code");
     try {
@@ -81,7 +84,7 @@ const PaymentPage = () => {
       
       setIsDetailsSaved(true); 
       setLoading(false);
-      alert("Details Saved! Proceeding to payment...");
+      alert("Details Saved! Please accept terms to proceed.");
     } catch (error) {
       console.error(error);
       alert("Failed to save details. Try again.");
@@ -98,6 +101,11 @@ const PaymentPage = () => {
     // 🔒 Block Payment if details are not saved
     if (!isDetailsSaved) {
         return alert("Please Confirm your Details first!");
+    }
+
+    // 🔒 Block Payment if Terms not accepted
+    if (!isTermsAccepted) {
+        return alert("Please accept the Terms and Conditions to proceed.");
     }
 
     const loadRazorpayScript = () => {
@@ -243,7 +251,7 @@ const PaymentPage = () => {
       </div>
 
       {/* RIGHT: User Details & Payment */}
-      <div className="w-full md:w-80 bg-white p-6 rounded-lg shadow-md h-fit">
+      <div className="w-full md:w-96 bg-white p-6 rounded-lg shadow-md h-fit">
         {isSignedIn ? (
             <div>
                 <div className="mb-4 p-3 bg-green-50 text-green-700 rounded text-sm font-medium">
@@ -283,10 +291,42 @@ const PaymentPage = () => {
                     </div>
                 )}
 
+                {/* ✅ NEW: Terms and Conditions Section */}
+                <div className="mb-4">
+                    <p className="text-sm font-bold text-gray-700 flex items-center mb-2">
+                        <ScrollText className="w-4 h-4 mr-2" /> Terms & Conditions
+                    </p>
+                    <div className="h-32 overflow-y-auto bg-gray-50 p-2 border rounded text-xs text-gray-600 space-y-1">
+                        <p>1. Please carry a valid ID proof along with you.</p>
+                        <p>2. No refunds on purchased ticket are possible, even in case of any rescheduling.</p>
+                        <p>3. Security procedures, including frisking remain the right of the management.</p>
+                        <p>4. No dangerous objects (weapons, knives, fireworks, bottles, etc) allowed.</p>
+                        <p>5. Organizers are not responsible for injury or damage. Claims settled in Mumbai courts.</p>
+                        <p>6. People in an inebriated state may not be allowed entry.</p>
+                        <p>7. Organizers hold the right to deny late entry.</p>
+                        <p>8. Transferred/lost tickets will not be valid.</p>
+                        <p>9. Venue rules apply.</p>
+                    </div>
+                    
+                    <div className="flex items-start mt-3 gap-2">
+                        <input 
+                            type="checkbox" 
+                            id="terms" 
+                            checked={isTermsAccepted} 
+                            onChange={(e) => setIsTermsAccepted(e.target.checked)}
+                            className="mt-1 w-4 h-4 text-pink-600 rounded focus:ring-pink-500"
+                        />
+                        <label htmlFor="terms" className="text-xs text-gray-700 cursor-pointer select-none leading-tight">
+                            I agree to the Terms and Conditions
+                        </label>
+                    </div>
+                </div>
+
                 <button 
                   onClick={handlePayment} 
-                  disabled={loading || !isDetailsSaved} 
-                  className={`w-full py-3 rounded-lg font-bold transition ${isDetailsSaved ? "bg-pink-600 text-white hover:bg-pink-700" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
+                  // ✅ DISABLED until both DETAILS SAVED and TERMS ACCEPTED
+                  disabled={loading || !isDetailsSaved || !isTermsAccepted} 
+                  className={`w-full py-3 rounded-lg font-bold transition ${isDetailsSaved && isTermsAccepted ? "bg-pink-600 text-white hover:bg-pink-700" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
                 >
                   {loading ? "Processing..." : `Proceed to Pay ₹${currentTotal}`}
                 </button>
