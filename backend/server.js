@@ -1,52 +1,43 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const Razorpay = require('razorpay'); 
-const crypto = require('crypto');     
-require('dotenv').config();
 
 // --- IMPORT MODELS ---
-// Adjust paths if needed (e.g. ./models/Event instead of ./src/models/Event)
 const Event = require('./src/models/Event'); 
 const User = require('./src/models/User');
 const TicketBooking = require('./src/models/TicketBooking');
 const GiftCard = require('./src/models/GiftCard'); 
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-// ... existing imports ...
+// --- IMPORT ROUTES & CONTROLLERS ---
+const paymentRoutes = require('./src/routes/paymentRoutes'); // ✅ Use the file we created
 const userController = require('./src/controllers/userController'); // ✅ Import Controller
 
 const app = express();
+
+// --- MIDDLEWARE ---
+app.use(cors({
+    origin: ["http://localhost:5173", "https://concert-ticketbooking.vercel.app"],
+    credentials: true
+}));
 app.use(express.json());
-app.use(cors());
 
-// ... existing routes ...
+// ==========================
+//        CORE ROUTES
+// ==========================
 
-// ✅ ADD THIS NEW ROUTE for updating user details
-app.post('/api/user/update', userController.updateUserProfile);
-
-// ... existing app.listen ...
-// 1. Import the route (at the top)
-const paymentRoutes = require('./src/routes/paymentRoutes');
-
-// ... (other app.use lines)
-
-// 2. Use the route (before app.listen)
+// ✅ 1. Payment Routes (Links to src/routes/paymentRoutes.js)
 app.use('/api/payment', paymentRoutes);
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+// ✅ 2. User Update Route (Links to src/controllers/userController.js)
+app.post('/api/user/update', userController.updateUserProfile);
+
 
 // ==========================
-//        ROUTES
+//      INLINE ROUTES
 // ==========================
 
-// 1. GET Events
+// 3. GET Events
 app.get('/api/events', async (req, res) => {
   try {
     const events = await Event.find();
@@ -57,7 +48,7 @@ app.get('/api/events', async (req, res) => {
   }
 });
 
-// 2. POST Save User
+// 4. POST Save User (Initial Login)
 app.post('/api/save-user', async (req, res) => {
   const { clerkId, name, email } = req.body;
   try {
@@ -75,7 +66,7 @@ app.post('/api/save-user', async (req, res) => {
   }
 });
 
-// 3. POST Create Booking
+// 5. POST Create Booking
 app.post('/api/ticketbooking', async (req, res) => {
   try {
     const { userId, userEmail, tickets, totalTickets, totalAmount } = req.body;
@@ -96,7 +87,7 @@ app.post('/api/ticketbooking', async (req, res) => {
   }
 });
 
-// 4. GET Booking by ID
+// 6. GET Booking by ID
 app.get('/api/ticketbooking/:id', async (req, res) => {
   try {
     const booking = await TicketBooking.findById(req.params.id);
@@ -105,67 +96,6 @@ app.get('/api/ticketbooking/:id', async (req, res) => {
   } catch (error) {
     console.error("Error fetching booking:", error);
     res.status(500).json({ message: "Server Error" });
-  }
-});
-
-// 5. POST Create Razorpay Order
-app.post('/api/payment/create-order', async (req, res) => {
-  try {
-    const { bookingId } = req.body;
-    const booking = await TicketBooking.findById(bookingId);
-    if (!booking) return res.status(404).json({ message: "Booking not found" });
-
-    // Use finalAmount if discount exists, otherwise totalAmount
-    const amountToPay = booking.finalAmount !== undefined ? booking.finalAmount : booking.totalAmount;
-
-    const options = {
-      amount: Math.round(amountToPay * 100), // Paise
-      currency: "INR",
-      receipt: booking._id.toString(),
-    };
-
-    const order = await razorpay.orders.create(options);
-    
-    res.json({
-      success: true,
-      order_id: order.id,
-      amount: order.amount,
-      key_id: process.env.RAZORPAY_KEY_ID,
-      booking_details: booking 
-    });
-  } catch (error) {
-    console.error("Error creating Razorpay order:", error);
-    res.status(500).json({ message: "Order creation failed" });
-  }
-});
-
-// 6. POST Verify Payment
-app.post('/api/payment/verify', async (req, res) => {
-  try {
-    const { razorpay_payment_id, razorpay_order_id, razorpay_signature, bookingId } = req.body;
-    
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-      .update(body.toString())
-      .digest('hex');
-
-    if (expectedSignature === razorpay_signature) {
-      await TicketBooking.findByIdAndUpdate(bookingId, {
-        paymentStatus: 'paid',
-        paidAt: new Date(),
-        razorpayPaymentId: razorpay_payment_id,
-        razorpayOrderId: razorpay_order_id,
-        razorpaySignature: razorpay_signature
-      });
-      console.log("✅ Payment Verified for Booking:", bookingId);
-      res.json({ success: true, message: "Payment verified successfully" });
-    } else {
-      res.status(400).json({ success: false, message: "Invalid Signature" });
-    }
-  } catch (error) {
-    console.error("Verification failed:", error);
-    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
@@ -228,24 +158,11 @@ app.post('/api/apply-discount', async (req, res) => {
   }
 });
 
-
-// 1. DEFINE PORT (Must be above app.listen)
+// ==========================
+//    DB CONNECTION & START
 // ==========================
 const PORT = process.env.PORT || 5000;
 
-// ==========================
-// 2. CORS SETUP (Updated for easy deployment)
-// ==========================
-app.use(cors({
-  // allowing '*' means "Allow Everyone" (Easiest for testing)
-  // Once your Vercel app is working, you can replace '*' with your specific URL.
-  origin: "*", 
-  credentials: true
-}));
-
-// ==========================
-// 3. DB CONNECTION & START
-// ==========================
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB Connected Successfully');
