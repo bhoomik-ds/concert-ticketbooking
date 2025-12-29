@@ -17,13 +17,13 @@ const PaymentPage = () => {
   const [discountData, setDiscountData] = useState(null);
   const [bookingDetails, setBookingDetails] = useState(null);
 
-  // ✅ NEW: User Details Form State
+  // User Details Form State
   const [userDetails, setUserDetails] = useState({
     fullName: "",
     mobile: "",
     city: ""
   });
-  const [isDetailsSaved, setIsDetailsSaved] = useState(false); // Controls if form is locked
+  const [isDetailsSaved, setIsDetailsSaved] = useState(false); 
 
   // 1. Load Booking Data
   useEffect(() => {
@@ -45,12 +45,25 @@ const PaymentPage = () => {
     }
   }, [user]);
 
-  // ✅ Handle User Input
+  // ✅ 3. DEFINE THE MISSING FUNCTION HERE
+  const handleApplyCoupon = async () => {
+    if (!couponCode) return alert("Please enter a code");
+    try {
+      const res = await axios.post("https://concert-api-77il.onrender.com/api/apply-discount", {
+        bookingId: id,
+        code: couponCode
+      });
+      setDiscountData(res.data);
+      alert("✅ Coupon Applied Successfully!");
+    } catch (error) {
+      alert(error.response?.data?.message || "Invalid Coupon Code");
+    }
+  };
+
   const handleInputChange = (e) => {
     setUserDetails({ ...userDetails, [e.target.name]: e.target.value });
   };
 
-  // ✅ SAVE USER DETAILS TO DB
   const handleSaveDetails = async () => {
     if (!userDetails.fullName || !userDetails.mobile || !userDetails.city) {
       return alert("Please fill in all details (Name, Mobile, City)");
@@ -58,7 +71,6 @@ const PaymentPage = () => {
 
     try {
       setLoading(true);
-      // Call our new Backend Route
       await axios.post("https://concert-api-77il.onrender.com/api/user/update", {
         clerkId: user.id,
         fullName: userDetails.fullName,
@@ -66,7 +78,7 @@ const PaymentPage = () => {
         city: userDetails.city
       });
       
-      setIsDetailsSaved(true); // ✅ Unlock Payment Button
+      setIsDetailsSaved(true); 
       setLoading(false);
       alert("Details Saved! Proceeding to payment...");
     } catch (error) {
@@ -82,12 +94,11 @@ const PaymentPage = () => {
         return;
     }
     
-    // ✅ Check if details are saved
     if (!isDetailsSaved) {
         return alert("Please Confirm your Details first!");
     }
 
-    const loadRazorpayScript = () => { /* ... same as before ... */
+    const loadRazorpayScript = () => {
         return new Promise((resolve) => {
             const script = document.createElement("script");
             script.src = "https://checkout.razorpay.com/v1/checkout.js";
@@ -102,21 +113,27 @@ const PaymentPage = () => {
 
     const finalAmount = discountData ? discountData.finalAmount : bookingDetails.totalAmount;
 
-    // ✅ PARSE SEATS: Convert "Gold (x2)" -> { type: "Gold", qty: 2 }
-    const parsedSeats = bookingDetails.selectedSeats.map(seatStr => {
-        const match = seatStr.match(/(.+) \(x(\d+)\)/);
-        if (match) {
-            return { ticketType: match[1], quantity: parseInt(match[2]) };
-        }
-        return { ticketType: seatStr, quantity: 1 };
-    });
+    // Parse seats for backend
+    let parsedSeats = [];
+    if (Array.isArray(bookingDetails.selectedSeats)) {
+        parsedSeats = bookingDetails.selectedSeats.map(seatStr => {
+            if (typeof seatStr === 'string') {
+                 const match = seatStr.match(/(.+) \(x(\d+)\)/);
+                 if (match) {
+                     return { ticketType: match[1], quantity: parseInt(match[2]) };
+                 }
+                 return { ticketType: seatStr, quantity: 1 };
+            }
+            return seatStr; // Already an object
+        });
+    }
 
     try {
       setLoading(true);
       const { data } = await axios.post("https://concert-api-77il.onrender.com/api/payment/create-order", { 
           eventId: id,
           amount: finalAmount,
-          seats: parsedSeats, // Send parsed structure
+          seats: parsedSeats, 
           userId: user.id 
       });
       
@@ -149,9 +166,9 @@ const PaymentPage = () => {
           } catch (err) { alert("Payment verification failed."); }
         },
         prefill: { 
-            name: userDetails.fullName, // Use Form Name
+            name: userDetails.fullName,
             email: user.primaryEmailAddress?.emailAddress, 
-            contact: userDetails.mobile // Use Form Mobile
+            contact: userDetails.mobile 
         },
         theme: { color: "#db2777" }
       };
@@ -187,7 +204,7 @@ const PaymentPage = () => {
             </div>
             <div className="flex justify-between my-2">
                 <span>Total Quantity</span>
-                <span>{selectedSeats.length}</span>
+                <span>{selectedSeats?.length || 0}</span>
             </div>
         </div>
         
@@ -216,7 +233,6 @@ const PaymentPage = () => {
                     Logged in as {user.firstName}
                 </div>
 
-                {/* ✅ USER DETAILS FORM */}
                 {!isDetailsSaved ? (
                     <div className="space-y-3 mb-4">
                         <p className="text-sm font-bold text-gray-700">Enter Details to Proceed:</p>
@@ -252,7 +268,7 @@ const PaymentPage = () => {
 
                 <button 
                   onClick={handlePayment} 
-                  disabled={loading || !isDetailsSaved} // 🔒 Locked until saved
+                  disabled={loading || !isDetailsSaved} 
                   className={`w-full py-3 rounded-lg font-bold transition ${isDetailsSaved ? "bg-pink-600 text-white hover:bg-pink-700" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
                 >
                   {loading ? "Processing..." : `Proceed to Pay ₹${currentTotal}`}
