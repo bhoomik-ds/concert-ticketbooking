@@ -1,23 +1,32 @@
 const mongoose = require('mongoose');
 
 const ticketBookingSchema = new mongoose.Schema({
-  userId: { type: String, required: true },
-  eventId: { type: String }, // ✅ Added Event ID
+  // ✅ UPDATE: Changed to ObjectId to link with User Collection (Hybrid Approach)
+  userId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
+  },
   
-  // ✅ NEW FIELDS: Save Guest Details for this specific booking
-  guestName: String,
-  mobile: String,
-  city: String,
+  eventId: { type: String, required: true },
 
+  // ✅ SNAPSHOT FIELDS: Saved permanently for this Invoice/Ticket
+  guestName: { type: String, required: true },
+  mobile: { type: String, required: true },
+  city: { type: String, required: true },
+  
+  // Optional: If you want to snapshot email too
   userEmail: String,
+
   tickets: [
     {
       ticketType: String,
       quantity: Number,
-      price: Number,    // Optional
-      subtotal: Number  // Optional
+      price: Number,      // Optional
+      subtotal: Number    // Optional
     }
   ],
+  
   totalTickets: Number,
   totalAmount: Number, 
   

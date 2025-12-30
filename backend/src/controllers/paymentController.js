@@ -1,6 +1,5 @@
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
-// ✅ Import the correct model
 const TicketBooking = require('../models/TicketBooking'); 
 
 const razorpay = new Razorpay({
@@ -11,7 +10,9 @@ const razorpay = new Razorpay({
 // 1. Create Order
 exports.createOrder = async (req, res) => {
   try {
-    const { amount } = req.body; // Only amount is needed for Razorpay Order
+    const { amount } = req.body; 
+
+    if (!amount) return res.status(400).send("Amount is required");
 
     const options = {
       amount: Math.round(amount * 100), // Convert to paisa
@@ -35,10 +36,15 @@ exports.createOrder = async (req, res) => {
   }
 };
 
-// 2. Verify Payment & SAVE BOOKING
+// 2. Verify Payment & SAVE BOOKING (Hybrid Strategy)
 exports.verifyPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingData } = req.body;
+
+    // Safety Check
+    if (!bookingData) {
+        return res.status(400).json({ success: false, message: "Booking Data Missing" });
+    }
 
     const sign = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSign = crypto
@@ -47,14 +53,14 @@ exports.verifyPayment = async (req, res) => {
       .digest("hex");
 
     if (razorpay_signature === expectedSign) {
-      // ✅ Payment Verified! Now Save to DB
       
+      // ✅ Payment Verified! Now Save to DB using Hybrid Strategy
       const newBooking = new TicketBooking({
-        userId: bookingData.userId,
+        userId: bookingData.userId, // This links to the User Account
         eventId: bookingData.eventId,
         
-        // ✅ SAVE GUEST DETAILS
-        guestName: bookingData.guestName,
+        // ✅ SNAPSHOT: Saving details directly to the ticket (For Invoice)
+        guestName: bookingData.guestName, 
         mobile: bookingData.mobile,
         city: bookingData.city,
 
@@ -66,7 +72,7 @@ exports.verifyPayment = async (req, res) => {
         
         totalTickets: bookingData.seats.reduce((sum, s) => sum + s.quantity, 0),
         totalAmount: bookingData.totalAmount,
-        finalAmount: bookingData.totalAmount, // Assuming full paid
+        finalAmount: bookingData.totalAmount, 
         
         paymentStatus: 'paid',
         razorpayPaymentId: razorpay_payment_id,
@@ -77,6 +83,8 @@ exports.verifyPayment = async (req, res) => {
 
       await newBooking.save();
 
+      // OPTIONAL: Decrease Inventory Count Here (Future Step)
+      
       res.json({ success: true, message: "Payment Verified", bookingId: newBooking._id });
     } else {
       res.status(400).json({ success: false, message: "Invalid Signature" });
