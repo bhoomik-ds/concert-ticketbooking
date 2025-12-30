@@ -2,8 +2,10 @@ const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const TicketBooking = require('../models/TicketBooking'); 
 const Event = require('../models/Event'); 
+// 👇 1. IMPORT USER & EMAIL SERVICE
+const User = require('../models/User'); 
+const { sendTicketEmail } = require('../utils/emailService');
 
-// 👇 THIS WAS MISSING IN YOUR CODE. ADD IT BACK!
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -76,7 +78,7 @@ exports.verifyPayment = async (req, res) => {
               finalSeats.push({
                   ticketType: requestedSeat.ticketType,
                   quantity: requestedSeat.quantity,
-                  seatNumbers: generatedIds // ✅ Saves IDs like ["VIP-501"]
+                  seatNumbers: generatedIds 
               });
           }
       }
@@ -90,7 +92,7 @@ exports.verifyPayment = async (req, res) => {
         guestName: bookingData.guestName, 
         mobile: bookingData.mobile,
         city: bookingData.city,
-        tickets: finalSeats, // ✅ Includes seatNumbers
+        tickets: finalSeats,
         totalTickets: bookingData.seats.reduce((sum, s) => sum + s.quantity, 0),
         totalAmount: bookingData.totalAmount,
         finalAmount: bookingData.totalAmount, 
@@ -102,6 +104,34 @@ exports.verifyPayment = async (req, res) => {
       });
 
       await newBooking.save();
+
+      // ✅ 4. EMAIL LOGIC STARTS HERE
+      // Try to get email from frontend, otherwise fetch from User DB
+      let recipientEmail = bookingData.email;
+
+      if (!recipientEmail) {
+         try {
+             // Assuming user ID from Clerk is stored in 'userId' or 'clerkId' in your User model
+             // We check both just to be safe based on your previous schema
+             const user = await User.findOne({ 
+                 $or: [{ clerkId: bookingData.userId }, { userId: bookingData.userId }] 
+             });
+             
+             if (user && user.email) {
+                 recipientEmail = user.email;
+             }
+         } catch (err) {
+             console.log("⚠️ Could not fetch user email from DB:", err.message);
+         }
+      }
+
+      // If we found an email, send the ticket
+      if (recipientEmail) {
+          // We don't await this so the user gets the success response immediately
+          sendTicketEmail(newBooking, event, recipientEmail);
+      } else {
+          console.log("⚠️ No email address found. Ticket email skipped.");
+      }
 
       res.json({ success: true, message: "Booking Confirmed!", bookingId: newBooking._id });
     } else {
