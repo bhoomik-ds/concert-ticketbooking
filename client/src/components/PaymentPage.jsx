@@ -25,10 +25,10 @@ const PaymentPage = () => {
   });
   const [isDetailsSaved, setIsDetailsSaved] = useState(false); 
   
-  // ✅ NEW: Terms and Conditions State
+  // ✅ Terms and Conditions State
   const [isTermsAccepted, setIsTermsAccepted] = useState(false);
 
-  // 1. Load Booking Data (Robust Version)
+  // 1. Load Booking Data
   useEffect(() => {
     const savedData = localStorage.getItem("pendingBooking");
     if (state) {
@@ -156,10 +156,14 @@ const PaymentPage = () => {
         currency: "INR",
         name: "BookMyConcert",
         description: `Booking for ${userDetails.fullName}`,
+        
+        // ✅ ADDED PUBLIC LOGO (Fixes the CORS/Localhost error)
+        image: "https://cdn.razorpay.com/logos/GhRQcyean79PqE_medium.png",
+        
         order_id: data.order_id,
         handler: async function (response) {
           try {
-            // ✅ SEND GUEST DETAILS IN VERIFY STEP
+            // ✅ SEND GUEST DETAILS IN VERIFY STEP (Triggers the Email)
             const verifyRes = await axios.post("https://concert-api-77il.onrender.com/api/payment/verify", {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
@@ -167,10 +171,12 @@ const PaymentPage = () => {
               bookingData: { 
                   eventId: id,
                   userId: user.id,
+                  // Pass email if available to ensure delivery
+                  email: user.primaryEmailAddress?.emailAddress, 
                   seats: parsedSeats,
                   totalAmount: finalAmount,
                   
-                  // 👇 IMPORTANT: Send these to save in TicketBooking collection
+                  // 👇 IMPORTANT: These fields populate the Email Receipt
                   guestName: userDetails.fullName,
                   mobile: userDetails.mobile,
                   city: userDetails.city
@@ -291,7 +297,7 @@ const PaymentPage = () => {
                     </div>
                 )}
 
-                {/* ✅ NEW: Terms and Conditions Section */}
+                {/* Terms and Conditions Section */}
                 <div className="mb-4">
                     <p className="text-sm font-bold text-gray-700 flex items-center mb-2">
                         <ScrollText className="w-4 h-4 mr-2" /> Terms & Conditions
@@ -324,7 +330,6 @@ const PaymentPage = () => {
 
                 <button 
                   onClick={handlePayment} 
-                  // ✅ DISABLED until both DETAILS SAVED and TERMS ACCEPTED
                   disabled={loading || !isDetailsSaved || !isTermsAccepted} 
                   className={`w-full py-3 rounded-lg font-bold transition ${isDetailsSaved && isTermsAccepted ? "bg-pink-600 text-white hover:bg-pink-700" : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
                 >
