@@ -3,6 +3,12 @@ const crypto = require('crypto');
 const TicketBooking = require('../models/TicketBooking'); 
 const Event = require('../models/Event'); 
 
+// 👇 THIS WAS MISSING IN YOUR CODE. ADD IT BACK!
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
+
 exports.createOrder = async (req, res) => {
   try {
     const { amount } = req.body; 
