@@ -2,32 +2,36 @@ const mongoose = require('mongoose');
 
 const eventSchema = new mongoose.Schema({
   title: String,
-  category: String,      // New
-  rating: Number,        // New
-  votes: String,         // New
-  interested: String,    // New
-  tags: [String],        // New
-  about: String,         // New
-  highlights: [String],  // New
+  category: String,
+  rating: Number,
+  votes: String,
+  interested: String,
+  tags: [String],
+  about: String,
+  highlights: [String],
   date: Date,
-  time: String,          // New
-  duration: String,      // New
+  time: String,
+  duration: String,
   venue: {
     name: String,
     city: String,
-    address: String      // New
+    address: String
   },
-  priceRange: String,    // New
-  originalPrice: String, // New
+  priceRange: String,
+  originalPrice: String,
   bannerImage: String,
-  galleryImages: [String], // New
+  galleryImages: [String],
+  
+  // ✅ UPDATED TICKET SCHEMA
   ticketTypes: [{
-    name: String,
+    name: String,         // e.g., "Fanpit"
     price: Number,
-    totalSeats: Number,
-    availableSeats: Number
+    totalSeats: Number,   // e.g., 1000
+    availableSeats: Number, // e.g., 450 (Updates automatically)
+    
+    // 👇 NEW FIELD: Tracks the last ID (e.g., if 500 sold, next is #501)
+    soldCount: { type: Number, default: 0 } 
   }]
 });
 
-// This line exports the model so other files can use it
 module.exports = mongoose.model('Event', eventSchema);

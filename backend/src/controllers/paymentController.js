@@ -1,27 +1,20 @@
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const TicketBooking = require('../models/TicketBooking'); 
+const Event = require('../models/Event'); 
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
-
-// 1. Create Order
 exports.createOrder = async (req, res) => {
   try {
     const { amount } = req.body; 
-
     if (!amount) return res.status(400).send("Amount is required");
 
     const options = {
-      amount: Math.round(amount * 100), // Convert to paisa
+      amount: Math.round(amount * 100), 
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
     };
 
     const order = await razorpay.orders.create(options);
-
     if (!order) return res.status(500).send("Error creating order");
 
     res.json({
@@ -36,15 +29,11 @@ exports.createOrder = async (req, res) => {
   }
 };
 
-// 2. Verify Payment & SAVE BOOKING
 exports.verifyPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingData } = req.body;
 
-    // Safety Check
-    if (!bookingData) {
-        return res.status(400).json({ success: false, message: "Booking Data Missing" });
-    }
+    if (!bookingData) return res.status(400).json({ success: false, message: "Booking Data Missing" });
 
     const sign = razorpay_order_id + "|" + razorpay_payment_id;
     const expectedSign = crypto
@@ -54,26 +43,51 @@ exports.verifyPayment = async (req, res) => {
 
     if (razorpay_signature === expectedSign) {
       
-      // ✅ Payment Verified! Now Save to DB
+      // 1. Fetch Event
+      const event = await Event.findById(bookingData.eventId);
+      if (!event) return res.status(404).json({ success: false, message: "Event not found" });
+
+      // 2. Generate Seat IDs
+      const finalSeats = [];
+      for (const requestedSeat of bookingData.seats) {
+          const ticketCategory = event.ticketTypes.find(t => t.name === requestedSeat.ticketType);
+
+          if (ticketCategory) {
+              if (ticketCategory.availableSeats < requestedSeat.quantity) {
+                  throw new Error(`Not enough seats for ${ticketCategory.name}`);
+              }
+
+              const generatedIds = [];
+              let currentCount = ticketCategory.soldCount || 0;
+
+              for (let i = 1; i <= requestedSeat.quantity; i++) {
+                  generatedIds.push(`${ticketCategory.name.toUpperCase()}-${currentCount + i}`);
+              }
+
+              ticketCategory.soldCount = (ticketCategory.soldCount || 0) + requestedSeat.quantity;
+              ticketCategory.availableSeats -= requestedSeat.quantity;
+
+              finalSeats.push({
+                  ticketType: requestedSeat.ticketType,
+                  quantity: requestedSeat.quantity,
+                  seatNumbers: generatedIds // ✅ Saves IDs like ["VIP-501"]
+              });
+          }
+      }
+
+      await event.save();
+
+      // 3. Save Booking
       const newBooking = new TicketBooking({
         userId: bookingData.userId, 
         eventId: bookingData.eventId,
-        
-        // Snapshot Details
         guestName: bookingData.guestName, 
         mobile: bookingData.mobile,
         city: bookingData.city,
-
-        // Map seats
-        tickets: bookingData.seats.map(s => ({
-            ticketType: s.ticketType,
-            quantity: s.quantity
-        })),
-        
+        tickets: finalSeats, // ✅ Includes seatNumbers
         totalTickets: bookingData.seats.reduce((sum, s) => sum + s.quantity, 0),
         totalAmount: bookingData.totalAmount,
         finalAmount: bookingData.totalAmount, 
-        
         paymentStatus: 'paid',
         razorpayPaymentId: razorpay_payment_id,
         razorpayOrderId: razorpay_order_id,
@@ -83,19 +97,12 @@ exports.verifyPayment = async (req, res) => {
 
       await newBooking.save();
 
-      res.json({ success: true, message: "Payment Verified", bookingId: newBooking._id });
+      res.json({ success: true, message: "Booking Confirmed!", bookingId: newBooking._id });
     } else {
       res.status(400).json({ success: false, message: "Invalid Signature" });
     }
   } catch (error) {
-    // ✅ IMPROVED ERROR LOGGING: This will print the EXACT reason for the crash
-    console.error("❌ PAYMENT SAVE ERROR:", error.message);
-    if (error.errors) { console.error("Validation Errors:", error.errors); }
-
-    res.status(500).json({ 
-        success: false, 
-        message: "Payment Verification Failed", 
-        error: error.message 
-    });
+    console.error("❌ BOOKING ERROR:", error.message);
+    res.status(500).json({ success: false, message: "Booking Failed", error: error.message });
   }
 };

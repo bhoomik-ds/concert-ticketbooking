@@ -1,12 +1,10 @@
 const mongoose = require('mongoose');
 
 const ticketBookingSchema = new mongoose.Schema({
-  // ✅ FIX: Changed to String. If this is ObjectId, it CRASHES with Clerk IDs.
   userId: { type: String, required: true },
-  
   eventId: { type: String, required: true },
 
-  // Snapshot Fields (Invoice Details)
+  // Snapshot Fields
   guestName: { type: String, required: true },
   mobile: { type: String, required: true },
   city: { type: String, required: true },
@@ -15,6 +13,8 @@ const ticketBookingSchema = new mongoose.Schema({
     {
       ticketType: String,
       quantity: Number,
+      // ✅ NEW FIELD: Stores the specific generated IDs (e.g. ["FANPIT-101", "FANPIT-102"])
+      seatNumbers: [String], 
       price: Number,      
       subtotal: Number    
     }

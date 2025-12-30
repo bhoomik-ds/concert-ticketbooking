@@ -24,11 +24,10 @@ const TicketPage = () => {
     bannerImage: ""
   });
 
-  // 1. Fetch Data from Backend (FIXED: Using Render URL)
+  // 1. Fetch Data from Backend
   useEffect(() => {
     const fetchTickets = async () => {
       try {
-        // 👇👇👇 THIS WAS THE ERROR. NOW FIXED TO RENDER URL 👇👇👇
         const response = await axios.get("https://concert-api-77il.onrender.com/api/events");
         const eventData = response.data[0]; 
 
@@ -42,11 +41,13 @@ const TicketPage = () => {
           });
 
           if (eventData.ticketTypes) {
+            // ✅ UPDATE: We now extract 'availableSeats' from the backend
             const formattedTickets = eventData.ticketTypes.map((t) => ({
               id: t._id,
               name: t.name,
               price: `₹${t.price}`,
-              rawPrice: t.price
+              rawPrice: t.price,
+              available: t.availableSeats // <--- CRITICAL NEW FIELD
             }));
             setTickets(formattedTickets);
           }
@@ -62,9 +63,23 @@ const TicketPage = () => {
   }, []);
 
   const handleAdd = (id) => {
+    const ticket = tickets.find(t => t.id === id);
+    const currentQty = selectedTickets[id] || 0;
+
+    // ✅ CHECK 1: Global Limit per user (Max 10)
     const totalCount = Object.values(selectedTickets).reduce((sum, qty) => sum + qty, 0);
-    if (totalCount >= 10) return;
-    setSelectedTickets((prev) => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
+    if (totalCount >= 10) {
+        alert("You can only book a maximum of 10 tickets.");
+        return;
+    }
+
+    // ✅ CHECK 2: Availability Limit (Prevent overbooking)
+    if (ticket && currentQty >= ticket.available) {
+        alert(`Sorry! Only ${ticket.available} tickets left for ${ticket.name}.`);
+        return;
+    }
+
+    setSelectedTickets((prev) => ({ ...prev, [id]: currentQty + 1 }));
   };
 
   const handleRemove = (id) => {
@@ -87,7 +102,7 @@ const TicketPage = () => {
     return sum + (ticket.rawPrice * qty);
   }, 0);
 
-  // 5. Handle Proceed (FIXED: Save to LocalStorage)
+  // 5. Handle Proceed
   const handleProceed = () => {
     if (totalTickets === 0) {
       alert("Please select at least one ticket.");
@@ -99,7 +114,6 @@ const TicketPage = () => {
         return `${ticket.name} (x${qty})`; 
     });
 
-    // ✅ SAVE DATA TO LOCAL STORAGE (Safety Backup)
     const bookingData = {
         selectedSeats: seatSummary, 
         totalAmount: totalPrice,
@@ -107,7 +121,6 @@ const TicketPage = () => {
     };
     localStorage.setItem("pendingBooking", JSON.stringify(bookingData));
 
-    // Navigate to payment
     navigate(`/payment/${eventDetails.id}`, { state: bookingData });
   };
 
