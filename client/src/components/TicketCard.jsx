@@ -5,8 +5,8 @@ const TicketCard = ({ id, name, price, count, available, onAdd, onRemove }) => {
   
   // 1. Calculate Status
   const isSoldOut = available === 0;
-  const isLowStock = !isSoldOut && available < 50; // Show warning if less than 50 left
-  const isMaxReached = count >= available; // Stop user if they try to add more than existing seats
+  const isLowStock = !isSoldOut && available < 50; 
+  const isMaxReached = count >= available; 
 
   return (
     <div 
@@ -18,7 +18,7 @@ const TicketCard = ({ id, name, price, count, available, onAdd, onRemove }) => {
         <div className="flex items-center gap-2">
             <p className="text-gray-800 font-medium">{price}</p>
             
-            {/* 🔥 Warning Badge */}
+            {/* Red Warning Badge (Only shows if < 50 left) */}
             {isLowStock && (
                 <span className="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-100 animate-pulse">
                    Only {available} Left!
@@ -31,9 +31,12 @@ const TicketCard = ({ id, name, price, count, available, onAdd, onRemove }) => {
             )}
         </div>
 
-        <a href="#" className="text-pink-600 text-sm hover:underline block mt-1">
-          Know more
-        </a>
+        {/* ✅ UPDATE: Removed "Know more" link. Added Available Seat Count */}
+        {!isSoldOut && (
+            <p className="text-xs text-gray-500 mt-1 font-medium">
+                Available Tickets: <span className="text-gray-900 font-bold">{available}</span>
+            </p>
+        )}
       </div>
 
       <div className="flex items-center gap-3 mt-3 sm:mt-0">
@@ -53,7 +56,7 @@ const TicketCard = ({ id, name, price, count, available, onAdd, onRemove }) => {
 
         <Button
           onClick={() => onAdd(id)}
-          // 🔒 DISABLE if Sold Out OR Max Reached
+          // 🔒 LOCK BUTTON if Sold Out OR Max Reached
           disabled={isSoldOut || isMaxReached}
           className={`border border-pink-500 text-pink-600 bg-white hover:bg-pink-50 px-3 py-1 ${
             isSoldOut || isMaxReached ? "opacity-50 cursor-not-allowed bg-gray-100 border-gray-300 text-gray-400" : ""
