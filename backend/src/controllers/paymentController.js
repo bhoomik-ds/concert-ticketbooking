@@ -36,7 +36,7 @@ exports.createOrder = async (req, res) => {
   }
 };
 
-// 2. Verify Payment & SAVE BOOKING (Hybrid Strategy)
+// 2. Verify Payment & SAVE BOOKING
 exports.verifyPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingData } = req.body;
@@ -54,17 +54,17 @@ exports.verifyPayment = async (req, res) => {
 
     if (razorpay_signature === expectedSign) {
       
-      // ✅ Payment Verified! Now Save to DB using Hybrid Strategy
+      // ✅ Payment Verified! Now Save to DB
       const newBooking = new TicketBooking({
-        userId: bookingData.userId, // This links to the User Account
+        userId: bookingData.userId, 
         eventId: bookingData.eventId,
         
-        // ✅ SNAPSHOT: Saving details directly to the ticket (For Invoice)
+        // Snapshot Details
         guestName: bookingData.guestName, 
         mobile: bookingData.mobile,
         city: bookingData.city,
 
-        // Map seats to schema format
+        // Map seats
         tickets: bookingData.seats.map(s => ({
             ticketType: s.ticketType,
             quantity: s.quantity
@@ -83,14 +83,19 @@ exports.verifyPayment = async (req, res) => {
 
       await newBooking.save();
 
-      // OPTIONAL: Decrease Inventory Count Here (Future Step)
-      
       res.json({ success: true, message: "Payment Verified", bookingId: newBooking._id });
     } else {
       res.status(400).json({ success: false, message: "Invalid Signature" });
     }
   } catch (error) {
-    console.error("Payment Verify Error:", error);
-    res.status(500).send("Verification Failed");
+    // ✅ IMPROVED ERROR LOGGING: This will print the EXACT reason for the crash
+    console.error("❌ PAYMENT SAVE ERROR:", error.message);
+    if (error.errors) { console.error("Validation Errors:", error.errors); }
+
+    res.status(500).json({ 
+        success: false, 
+        message: "Payment Verification Failed", 
+        error: error.message 
+    });
   }
 };
