@@ -47,7 +47,7 @@ const EventInfo = () => {
             {/* Title + Stats */}
             <div className="mb-6">
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-                PavanDeepRajan
+                {eventData.title}
               </h1>
 
               <div className="flex items-center space-x-4 text-sm text-gray-600 mb-4">
