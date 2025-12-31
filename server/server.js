@@ -18,8 +18,8 @@ const app = express();
 // --- MIDDLEWARE ---
 app.use(cors({
     origin: [
-        "https://raghavevents.in",               // YOUR NEW DOMAIN
-        "https://www.raghavevents.in"            // YOUR NEW DOMAIN (with www)
+        "https:/raghavevents.in",               // YOUR NEW DOMAIN
+        "https:/www.raghavevents.in"            // YOUR NEW DOMAIN (with www)
     ],
     credentials: true
 }));

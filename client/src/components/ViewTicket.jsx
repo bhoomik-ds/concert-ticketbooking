@@ -9,7 +9,7 @@ const ViewTicket = () => {
 
   useEffect(() => {
     // Make sure this URL matches your actual backend URL
-    axios.get(`https://raghavevents.in//api/ticketbooking/${id}`)
+    axios.get(`https:/raghavevents.in//api/ticketbooking/${id}`)
       .then(res => setBooking(res.data))
       .catch(err => console.error(err));
   }, [id]);

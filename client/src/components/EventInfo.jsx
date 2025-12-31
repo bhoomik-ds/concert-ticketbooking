@@ -13,7 +13,7 @@ const EventInfo = () => {
   useEffect(() => {
     const fetchEventInfo = async () => {
       try {
-        const response = await axios.get("https://raghavevents.in//api/events");
+        const response = await axios.get("https:/raghavevents.in//api/events");
         // Assuming we are showing the first event
         setEventData(response.data[0]); 
         setLoading(false);

@@ -52,7 +52,7 @@ const PaymentPage = () => {
   const handleApplyCoupon = async () => {
     if (!couponCode) return alert("Please enter a code");
     try {
-      const res = await axios.post("https://raghavevents.in//api/apply-discount", {
+      const res = await axios.post("https:/raghavevents.in//api/apply-discount", {
         bookingId: id,
         code: couponCode
       });
@@ -75,7 +75,7 @@ const PaymentPage = () => {
     try {
       setLoading(true);
       // Update User Profile
-      await axios.post("https://raghavevents.in//api/user/update", {
+      await axios.post("https:/raghavevents.in//api/user/update", {
         clerkId: user.id,
         fullName: userDetails.fullName,
         phoneNumber: userDetails.mobile,
@@ -141,7 +141,7 @@ const PaymentPage = () => {
     try {
       setLoading(true);
       // Create Order
-      const { data } = await axios.post("https://raghavevents.in//api/payment/create-order", { 
+      const { data } = await axios.post("https:/raghavevents.in//api/payment/create-order", { 
           eventId: id,
           amount: finalAmount,
           seats: parsedSeats, 
@@ -164,7 +164,7 @@ const PaymentPage = () => {
         handler: async function (response) {
           try {
             // ✅ SEND GUEST DETAILS IN VERIFY STEP (Triggers the Email)
-            const verifyRes = await axios.post("https://raghavevents.in//api/payment/verify", {
+            const verifyRes = await axios.post("https:/raghavevents.in//api/payment/verify", {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_signature: response.razorpay_signature,
