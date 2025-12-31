@@ -21,7 +21,7 @@ function App() {
   // Automatically save user to Database when they sign in
   useEffect(() => {
     // Define API URL
-    const API_URL = import.meta.env.VITE_API_URL || "https://concert-api-77il.onrender.com";
+    const API_URL = import.meta.env.VITE_API_URL || "https://raghavevents.in/";
 
     if (isSignedIn && user) {
       const saveUserToDB = async () => {

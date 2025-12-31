@@ -17,7 +17,10 @@ const app = express();
 
 // --- MIDDLEWARE ---
 app.use(cors({
-    origin: ["http://localhost:5173", "https://concert-ticketbooking.vercel.app"],
+    origin: [
+        "https://raghavevents.in",               // YOUR NEW DOMAIN
+        "https://www.raghavevents.in"            // YOUR NEW DOMAIN (with www)
+    ],
     credentials: true
 }));
 app.use(express.json());
