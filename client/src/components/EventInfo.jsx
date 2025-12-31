@@ -13,7 +13,7 @@ const EventInfo = () => {
   useEffect(() => {
     const fetchEventInfo = async () => {
       try {
-        const response = await axios.get("https:/raghavevents.in//api/events");
+        const response = await axios.get("https://raghavevents.in//api/events");
         // Assuming we are showing the first event
         setEventData(response.data[0]); 
         setLoading(false);
@@ -47,7 +47,7 @@ const EventInfo = () => {
             {/* Title + Stats */}
             <div className="mb-6">
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-                {eventData.title}
+                PavanDeepRajan
               </h1>
 
               <div className="flex items-center space-x-4 text-sm text-gray-600 mb-4">

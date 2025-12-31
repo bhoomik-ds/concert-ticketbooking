@@ -11,7 +11,7 @@ const MyTickets = () => {
 
   useEffect(() => {
     // Define API URL
-    const API_URL = "https:/raghavevents.in/";
+    const API_URL = "https://raghavevents.in/";
 
     if (isSignedIn && user) {
       const fetchBookings = async () => {
