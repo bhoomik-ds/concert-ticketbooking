@@ -26,7 +26,7 @@ function App() {
     if (isSignedIn && user) {
       const saveUserToDB = async () => {
         try {
-            await axios.post(`${API_URL}/api/save-user`, {
+            await axios.post(`${API_URL}api/save-user`, {
             clerkId: user.id,
             name: user.fullName,
             email: user.primaryEmailAddress?.emailAddress,

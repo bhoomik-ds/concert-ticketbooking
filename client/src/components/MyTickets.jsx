@@ -16,7 +16,7 @@ const MyTickets = () => {
     if (isSignedIn && user) {
       const fetchBookings = async () => {
         try {
-          const response = await axios.get(`${API_URL}/api/my-bookings/${user.id}`);
+          const response = await axios.get(`${API_URL}api/my-bookings/${user.id}`);
           setBookings(response.data);
         } catch (error) {
           console.error("Error fetching bookings:", error);
