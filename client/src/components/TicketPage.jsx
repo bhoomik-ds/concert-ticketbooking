@@ -28,7 +28,7 @@ const TicketPage = () => {
   useEffect(() => {
     const fetchTickets = async () => {
       try {
-        const response = await axios.get("https://raghavevents.in//api/events");
+        const response = await axios.get("https://raghavevents.in/api/events");
         const eventData = response.data[0]; 
 
         if (eventData) {
