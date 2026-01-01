@@ -13,8 +13,8 @@ const EventInfo = () => {
   useEffect(() => {
     const fetchEventInfo = async () => {
       try {
+        // ✅ FIXED: Removed double slash (Used to be //api/events)
         const response = await axios.get("https://raghavevents.in/api/events");
-        // Assuming we are showing the first event
         setEventData(response.data[0]); 
         setLoading(false);
       } catch (error) {
@@ -160,7 +160,7 @@ const EventInfo = () => {
               <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-lg">
                 <div className="mb-4">
                   {eventData.originalPrice && (
-                     <div className="text-sm text-gray-500 line-through">{eventData.originalPrice}</div>
+                      <div className="text-sm text-gray-500 line-through">{eventData.originalPrice}</div>
                   )}
                   <div className="text-3xl font-bold text-gray-900">{eventData.priceRange}</div>
                   <div className="text-sm text-green-600 font-medium">onwards</div>

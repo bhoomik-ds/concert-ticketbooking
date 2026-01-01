@@ -10,13 +10,14 @@ const MyTickets = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Define API URL
-    const API_URL = "https://raghavevents.in/";
+    // ✅ FIXED: Removed trailing slash
+    const API_URL = "https://raghavevents.in"; 
 
     if (isSignedIn && user) {
       const fetchBookings = async () => {
         try {
-          const response = await axios.get(`${API_URL}api/my-bookings/${user.id}`);
+          // ✅ FIXED: URL construction is now safe
+          const response = await axios.get(`${API_URL}/api/my-bookings/${user.id}`);
           setBookings(response.data);
         } catch (error) {
           console.error("Error fetching bookings:", error);
