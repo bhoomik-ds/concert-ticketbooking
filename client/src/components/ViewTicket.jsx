@@ -8,8 +8,8 @@ const ViewTicket = () => {
   const [booking, setBooking] = useState(null);
 
   useEffect(() => {
-    // Make sure this URL matches your actual backend URL
-    axios.get(`https://raghavevents.in//api/ticketbooking/${id}`)
+    // FIX: Removed double slash (replaced //api with /api)
+    axios.get(`https://raghavevents.in/api/ticketbooking/${id}`)
       .then(res => setBooking(res.data))
       .catch(err => console.error(err));
   }, [id]);
@@ -72,7 +72,7 @@ const ViewTicket = () => {
                    <div className="flex justify-between items-center mb-2">
                       <span className="font-bold text-pink-700">{t.ticketType}</span>
                       <span className="text-xs font-bold bg-white text-pink-600 px-2 py-1 rounded shadow-sm border border-pink-100">
-                         x{t.quantity}
+                          x{t.quantity}
                       </span>
                    </div>
 
@@ -83,8 +83,8 @@ const ViewTicket = () => {
                            <div className="flex flex-wrap gap-1">
                                {t.seatNumbers.map((seat, i) => (
                                    <span key={i} className="font-mono text-xs font-bold text-gray-700 bg-white border border-pink-200 px-2 py-1 rounded">
-                                       {/* ✅ FIXED: Replaces Hyphen with Colon (e.g. VIP : 1) */}
-                                       {seat.replace(/-(\d+)$/, ' : $1')}
+                                           {/* ✅ FIXED: Replaces Hyphen with Colon (e.g. VIP : 1) */}
+                                           {seat.replace(/-(\d+)$/, ' : $1')}
                                    </span>
                                ))}
                            </div>
