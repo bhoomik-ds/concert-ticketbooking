@@ -16,13 +16,13 @@ const userController = require('./src/controllers/userController'); // ✅ Impor
 const app = express();
 
 // --- MIDDLEWARE ---
-app.use(cors({
+const corsOptions = {
   origin: [
-    'http://localhost:5173', // This allows your local Vite frontend to talk to the live Render backend
-    // You can add your future live frontend URL here later once you host your React app!
+    'http://localhost:5173', 
+    'https://concert-ticketbooking.vercel.app' // <-- Make sure this matches your Vercel URL exactly!
   ],
-  credentials: true
-}));
+  credentials: true, 
+};
 app.use(express.json());
 
 // ==========================
