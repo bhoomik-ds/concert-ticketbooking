@@ -17,11 +17,11 @@ const app = express();
 
 // --- MIDDLEWARE ---
 app.use(cors({
-    origin: [
-        "https://raghavevents.in",               // YOUR NEW DOMAIN
-        "https://www.raghavevents.in"            // YOUR NEW DOMAIN (with www)
-    ],
-    credentials: true
+  origin: [
+    'http://localhost:5173', // This allows your local Vite frontend to talk to the live Render backend
+    // You can add your future live frontend URL here later once you host your React app!
+  ],
+  credentials: true
 }));
 app.use(express.json());
 

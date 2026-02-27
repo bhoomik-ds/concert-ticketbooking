@@ -11,7 +11,7 @@ const MyTickets = () => {
 
   useEffect(() => {
     // ✅ FIXED: Removed trailing slash
-    const API_URL = "https://raghavevents.in"; 
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/";
 
     if (isSignedIn && user) {
       const fetchBookings = async () => {

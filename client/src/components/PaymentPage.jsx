@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Tag, User, Phone, MapPin, ScrollText } from 'lucide-react'; 
 import { useUser, useClerk } from "@clerk/clerk-react";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/";
 
 const PaymentPage = () => {
   const { id } = useParams();
@@ -53,7 +54,7 @@ const PaymentPage = () => {
     if (!couponCode) return alert("Please enter a code");
     try {
       // FIX: Removed double slash
-      const res = await axios.post("https://raghavevents.in/api/apply-discount", {
+      const res = await axios.post(`${API_URL}api/apply-discount`, {
         bookingId: id,
         code: couponCode
       });
@@ -76,7 +77,7 @@ const PaymentPage = () => {
     try {
       setLoading(true);
       // FIX: Removed double slash
-      await axios.post("https://raghavevents.in/api/user/update", {
+      await axios.post(`${API_URL}api/user/update`, {
         clerkId: user.id,
         fullName: userDetails.fullName,
         phoneNumber: userDetails.mobile,
@@ -143,7 +144,7 @@ const PaymentPage = () => {
       setLoading(true);
       // Create Order
       // FIX: Removed double slash
-      const { data } = await axios.post("https://raghavevents.in/api/payment/create-order", { 
+      const { data } = await axios.post(`${API_URL}api/payment/create-order`, { 
           eventId: id,
           amount: finalAmount,
           seats: parsedSeats, 
@@ -167,7 +168,7 @@ const PaymentPage = () => {
           try {
             // ✅ SEND GUEST DETAILS IN VERIFY STEP (Triggers the Email)
             // FIX: Removed double slash
-            const verifyRes = await axios.post("https://raghavevents.in/api/payment/verify", {
+            const verifyRes = await axios.post(`${API_URL}api/payment/verify`, {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_signature: response.razorpay_signature,

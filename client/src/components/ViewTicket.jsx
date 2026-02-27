@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { CheckCircle, Ticket, User, MapPin } from 'lucide-react';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/";
 
 const ViewTicket = () => {
   const { id } = useParams();
@@ -9,7 +10,7 @@ const ViewTicket = () => {
 
   useEffect(() => {
     // FIX: Removed double slash (replaced //api with /api)
-    axios.get(`https://raghavevents.in/api/ticketbooking/${id}`)
+    axios.get(`${API_URL}api/ticketbooking/${id}`)
       .then(res => setBooking(res.data))
       .catch(err => console.error(err));
   }, [id]);

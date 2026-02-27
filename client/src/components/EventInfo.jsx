@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Star, Heart, Share2, Calendar, Clock, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/";
 
 const EventInfo = () => {
   const navigate = useNavigate();
@@ -10,11 +11,12 @@ const EventInfo = () => {
   const [loading, setLoading] = useState(true);
 
   // Fetch Data from Backend
-  useEffect(() => {
+ useEffect(() => {
     const fetchEventInfo = async () => {
       try {
-        // ✅ FIXED: Removed double slash (Used to be //api/events)
-        const response = await axios.get("https://raghavevents.in/api/events");
+        // ✅ FIXED: Using the dynamic API_URL instead of the hardcoded live domain
+        const response = await axios.get(`${API_URL}api/events`); 
+        
         setEventData(response.data[0]); 
         setLoading(false);
       } catch (error) {
