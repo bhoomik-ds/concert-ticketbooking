@@ -16,13 +16,15 @@ const userController = require('./src/controllers/userController'); // ✅ Impor
 const app = express();
 
 // --- MIDDLEWARE ---
+// --- MIDDLEWARE ---
 const corsOptions = {
-  origin: [
-    'http://localhost:5173', 
-    'https://concert-ticketbooking.vercel.app' // <-- Make sure this matches your Vercel URL exactly!
-  ],
+  // ✅ Setting origin to 'true' tells the server to dynamically accept the exact URL 
+  // that Vercel is currently using, preventing any mismatch errors!
+  origin: true, 
   credentials: true, 
 };
+
+app.use(cors(corsOptions)); 
 app.use(express.json());
 
 // ==========================
